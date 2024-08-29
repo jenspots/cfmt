@@ -9,7 +9,7 @@ use crate::lexer::token::{Token, TokenKeyword};
 
 /// A stateful lexer which can be executed once, returning a stream of tokens in the process.
 #[derive(Debug)]
-struct Lexer {
+pub struct Lexer {
     /// The source code that will be parsed by the lexer.
     source: Vec<char>,
     /// The position of the next character that needs to be parsed.
@@ -17,7 +17,7 @@ struct Lexer {
 }
 
 #[derive(Debug, Clone)]
-enum LexerError {
+pub enum LexerError {
     /// When the lexer is invoked, but there are no symbols to parse remaining.
     EndOfFileReached,
 
@@ -34,7 +34,7 @@ enum LexerError {
 
 impl Lexer {
     /// Create a new lexer for a given source file.
-    fn new(source: String) -> Lexer {
+    pub fn new(source: String) -> Lexer {
         Lexer {
             source: source.chars().collect(),
             index: 0,
@@ -48,6 +48,11 @@ impl Lexer {
         } else {
             Err(LexerError::EndOfFileReached)
         }
+    }
+
+    /// Check if the source file has been completely finished.
+    fn finished(&self) -> bool {
+        self.source.len() == self.index
     }
 
     /// Remove all whitespace leading up to the next readable character.
@@ -284,24 +289,23 @@ impl Lexer {
             _ => Err(LexerError::UnknownCharacter),
         }
     }
+}
 
-    /// Execute the lexer and return a list of tokens.
-    pub fn tokens(mut self) -> Result<Vec<Token>, LexerError> {
-        let mut result = Vec::new();
+impl Iterator for Lexer {
+    type Item = Result<Token, LexerError>;
 
-        loop {
-            match self.next_token() {
-                Ok(token) => result.push(token),
-                Err(LexerError::EndOfFileReached) => {
-                    break;
-                }
-                Err(err) => {
-                    return Err(err);
+    fn next(&mut self) -> Option<Self::Item> {
+        match self.next_token() {
+            Ok(token) => Some(Ok(token)),
+            Err(LexerError::EndOfFileReached) => {
+                if self.finished() {
+                    None
+                } else {
+                    Some(Err(LexerError::EndOfFileReached))
                 }
             }
+            err => Some(err),
         }
-
-        Ok(result)
     }
 }
 
@@ -317,7 +321,7 @@ mod tests {
         let expected = vec![];
 
         let lexer = Lexer::new(input);
-        let result = lexer.tokens().unwrap();
+        let result = lexer.collect::<Result<Vec<Token>, LexerError>>().unwrap();
         assert_eq!(result, expected);
     }
 
@@ -327,7 +331,7 @@ mod tests {
         let expected = vec![Number("24".to_string())];
 
         let lexer = Lexer::new(input);
-        let result = lexer.tokens().unwrap();
+        let result = lexer.collect::<Result<Vec<Token>, LexerError>>().unwrap();
         assert_eq!(result, expected);
     }
 
@@ -337,7 +341,7 @@ mod tests {
         let expected = vec![Number("4.63".to_string())];
 
         let lexer = Lexer::new(input);
-        let result = lexer.tokens().unwrap();
+        let result = lexer.collect::<Result<Vec<Token>, LexerError>>().unwrap();
         assert_eq!(result, expected);
     }
 
@@ -347,7 +351,7 @@ mod tests {
         let expected = vec![Str("Hello, World!".to_string())];
 
         let lexer = Lexer::new(input);
-        let result = lexer.tokens().unwrap();
+        let result = lexer.collect::<Result<Vec<Token>, LexerError>>().unwrap();
         assert_eq!(result, expected);
     }
 
@@ -367,7 +371,7 @@ mod tests {
         ];
 
         let lexer = Lexer::new(input);
-        let result = lexer.tokens().unwrap();
+        let result = lexer.collect::<Result<Vec<Token>, LexerError>>().unwrap();
         assert_eq!(result, expected);
     }
 
@@ -392,7 +396,7 @@ mod tests {
         ];
 
         let lexer = Lexer::new(input);
-        let result = lexer.tokens().unwrap();
+        let result = lexer.collect::<Result<Vec<Token>, LexerError>>().unwrap();
         assert_eq!(result, expected);
     }
 
@@ -432,7 +436,7 @@ mod tests {
         ];
 
         let lexer = Lexer::new(input.to_string());
-        let result = lexer.tokens().unwrap();
+        let result = lexer.collect::<Result<Vec<Token>, LexerError>>().unwrap();
         assert_eq!(expected, result);
     }
 }

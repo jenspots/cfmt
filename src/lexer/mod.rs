@@ -1,3 +1,3 @@
-mod direction;
-mod lexer;
-mod token;
+pub mod direction;
+pub mod lexer;
+pub mod token;
