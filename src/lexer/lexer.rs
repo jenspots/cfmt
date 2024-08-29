@@ -309,6 +309,17 @@ impl Lexer {
 mod tests {
     use super::*;
     use crate::lexer::token::Token::Number;
+    use crate::lexer::token::TokenKeyword::Auto;
+
+    #[test]
+    fn empty_string() {
+        let input = "".to_string();
+        let expected = vec![];
+
+        let lexer = Lexer::new(input);
+        let result = lexer.tokens().unwrap();
+        assert_eq!(result, expected);
+    }
 
     #[test]
     fn single_integer() {
@@ -324,6 +335,16 @@ mod tests {
     fn single_float() {
         let input = "4.63".to_string();
         let expected = vec![Number("4.63".to_string())];
+
+        let lexer = Lexer::new(input);
+        let result = lexer.tokens().unwrap();
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn single_string() {
+        let input = "\"Hello, World!\"".to_string();
+        let expected = vec![Str("Hello, World!".to_string())];
 
         let lexer = Lexer::new(input);
         let result = lexer.tokens().unwrap();
@@ -373,6 +394,17 @@ mod tests {
         let lexer = Lexer::new(input);
         let result = lexer.tokens().unwrap();
         assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn maximum_munch() {
+        let input = "for foreign auto automatic".to_string();
+        let expected = vec![
+            Keyword(For),
+            Str("foreign".to_string()),
+            Keyword(Auto),
+            Str("auto".to_string()),
+        ];
     }
 
     #[test]
